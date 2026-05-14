@@ -1,0 +1,74 @@
+- Epic: Task Priority Levels
+  - Story: Add priority field to task model
+    - Acceptance Criteria: Task objects include a priority property that accepts "P1", "P2", or "P3"; defaults to "P3" if not specified.
+    - Technical Requirements: Add 'priority TEXT DEFAULT "P3"' column to the tasks table in backend/src/app.js; update INSERT and SELECT SQL queries to handle the priority field.
+  - Story: Add priority selection in task form
+    - Acceptance Criteria: Task creation/editing form includes a priority selector (e.g., dropdown) with options P1 (High), P2 (Medium), P3 (Low); defaults to P3.
+    - Technical Requirements: In frontend/src/TaskForm.js, add a Material-UI Select component for priority with options; update state and form submission to include priority in the task object sent to /api/tasks.
+  - Story: Display priority in task list
+    - Acceptance Criteria: Each task in the list displays its priority level (e.g., as text like "P1" or with a label).
+    - Technical Requirements: In frontend/src/TaskList.js, add priority display in ListItemText or as a Chip; fetch and render the priority from task data.
+- Epic: Task Due Dates
+  - Story: Add due date field to task model
+    - Acceptance Criteria: Task objects include an optional dueDate property in ISO YYYY-MM-DD format; invalid date strings are treated as no due date.
+    - Technical Requirements: The due_date column already exists in the tasks table; ensure INSERT and SELECT queries handle due_date as TEXT in YYYY-MM-DD; add validation in backend to ignore invalid dates.
+  - Story: Add due date input in task form
+    - Acceptance Criteria: Task form includes a date input field for due date that accepts YYYY-MM-DD format; field is optional.
+    - Technical Requirements: TaskForm.js already has dueDate input; ensure it uses HTML5 date input or TextField with date type; normalize to YYYY-MM-DD before sending.
+  - Story: Display due date in task list
+    - Acceptance Criteria: Each task shows its due date in a readable format (e.g., MM/DD/YYYY) if set; displays nothing or "No due date" if unset.
+    - Technical Requirements: TaskList.js already has formatDueDate function; use it to display due date in ListItemText; show "No due date" if null.
+- Epic: Task Filters
+  - Story: Implement All filter tab
+    - Acceptance Criteria: "All" tab displays all tasks, including both completed and incomplete ones.
+    - Technical Requirements: Add filter tabs in App.js using Material-UI Tabs; for "All", fetch /api/tasks without query params; update TaskList to accept and display filtered tasks.
+  - Story: Implement Today filter tab
+    - Acceptance Criteria: "Today" tab displays only incomplete tasks with due dates matching today's date.
+    - Technical Requirements: Add "Today" tab; on click, fetch /api/tasks?completed=false and filter client-side for due_date === today's YYYY-MM-DD; update backend if needed for date filtering.
+  - Story: Implement Overdue filter tab
+    - Acceptance Criteria: "Overdue" tab displays only incomplete tasks with due dates in the past.
+    - Technical Requirements: Add "Overdue" tab; fetch /api/tasks?completed=false and filter client-side for due_date < today's date; consider adding backend query param for overdue.
+- Epic: Data Model Validation
+  - Story: Validate task title as required
+    - Acceptance Criteria: Tasks cannot be created or updated without a non-empty title; an error message is shown if the title is empty.
+    - Technical Requirements: Backend POST/PUT in app.js already checks title; frontend TaskForm.js shows error if !title.trim(); ensure consistent validation.
+  - Story: Validate priority enum values
+    - Acceptance Criteria: Priority must be one of "P1", "P2", or "P3"; invalid values are rejected or defaulted to "P3" with a warning.
+    - Technical Requirements: In backend, add check in POST/PUT to validate priority; default to "P3" if invalid; frontend Select ensures only valid options.
+  - Story: Validate due date format
+    - Acceptance Criteria: Due date must be a valid ISO YYYY-MM-DD string or empty; invalid formats are ignored (treated as absent) without saving.
+    - Technical Requirements: In backend, validate due_date with regex /^\d{4}-\d{2}-\d{2}$/ or Date parsing; set to null if invalid; frontend normalizes input.
+- Epic: Visual Overdue Indication
+  - Story: Highlight overdue tasks in red
+    - Acceptance Criteria: Incomplete tasks with due dates in the past are visually highlighted (e.g., red background, border, or text color).
+    - Technical Requirements: In TaskList.js, add conditional styling to ListItem (e.g., sx prop) if !completed && due_date < today; use red color from Material-UI theme.
+- Epic: Priority Color Coding
+  - Story: Add red badge for P1 priority
+    - Acceptance Criteria: P1 priority tasks display a red badge or indicator next to the task.
+    - Technical Requirements: In TaskList.js, add Chip with color="error" for priority === "P1".
+  - Story: Add orange badge for P2 priority
+    - Acceptance Criteria: P2 priority tasks display an orange badge or indicator next to the task.
+    - Technical Requirements: Add Chip with custom orange color for "P2".
+  - Story: Add gray badge for P3 priority
+    - Acceptance Criteria: P3 priority tasks display a gray badge or indicator next to the task.
+    - Technical Requirements: Add Chip with color="default" for "P3".
+- Epic: Task Sorting
+  - Story: Sort overdue tasks first
+    - Acceptance Criteria: Overdue tasks (incomplete, past due) appear at the top of the task list.
+    - Technical Requirements: Update backend GET /api/tasks ORDER BY clause to prioritize overdue (e.g., CASE WHEN completed=0 AND due_date < date('now') THEN 1 ELSE 0 END DESC).
+  - Story: Sort by priority within groups
+    - Acceptance Criteria: Within overdue and non-overdue groups, tasks are ordered by priority: P1 first, then P2, then P3.
+    - Technical Requirements: Add priority to ORDER BY: ... THEN priority ASC (assuming P1 < P2 < P3 lexicographically).
+  - Story: Sort by due date ascending
+    - Acceptance Criteria: Within the same priority level, tasks are sorted by due date with earliest dates first.
+    - Technical Requirements: Existing ORDER BY due_date ASC handles this.
+  - Story: Place undated tasks last
+    - Acceptance Criteria: Tasks without a due date appear after all tasks with due dates, within their priority group.
+    - Technical Requirements: Existing ORDER BY due_date IS NULL, due_date ASC ensures undated last.
+- Epic: Filter Behavior Adjustment
+  - Story: Hide completed tasks in Today filter
+    - Acceptance Criteria: The "Today" filter excludes all completed tasks, showing only incomplete ones due today.
+    - Technical Requirements: Ensure Today filter includes completed=false in query; client-side filter for due_date.
+  - Story: Hide completed tasks in Overdue filter
+    - Acceptance Criteria: The "Overdue" filter excludes all completed tasks, showing only incomplete overdue ones.
+    - Technical Requirements: Ensure Overdue filter includes completed=false; client-side filter for due_date < today.
